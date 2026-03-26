@@ -36,14 +36,16 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Redis-backed session store — survives server restarts on Render
+const sessionStore = new RedisStore({ client: redis as any, prefix: 'sess:' });
+
 app.use(session({
-  store: new RedisStore({ client: redis, prefix: 'sess:' }),
+  store: sessionStore,
   secret: process.env.SESSION_SECRET || 'secret',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: isProd,       // HTTPS only in production
-    sameSite: isProd ? 'none' : 'lax',  // cross-origin cookies in production
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
     maxAge: 24 * 60 * 60 * 1000
   }
 }));
