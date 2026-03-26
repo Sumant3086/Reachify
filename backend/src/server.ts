@@ -4,8 +4,10 @@ import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import session from 'express-session';
+import { RedisStore } from 'connect-redis';
 import passport from './config/passport';
 import { initDatabase, pool } from './config/database';
+import { redis } from './config/redis';
 import authRoutes from './routes/auth';
 import emailRoutes from './routes/emails';
 import { emailQueue, emailWorker, EmailJobData } from './queue/emailQueue';
@@ -17,10 +19,10 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const isProd = process.env.NODE_ENV === 'production';
 
-// Security headers
-app.use(helmet({ contentSecurityPolicy: false }));
+// Trust Render's proxy so secure cookies work over HTTPS
+app.set('trust proxy', 1);
 
-// Gzip compression
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(compression());
 
 app.use(cors({
@@ -28,19 +30,20 @@ app.use(cors({
   credentials: true
 }));
 
-// Global rate limit — 200 req/min per IP
 app.use(rateLimit({ windowMs: 60_000, max: 200, standardHeaders: true, legacyHeaders: false }));
 
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
+// Redis-backed session store — survives server restarts on Render
 app.use(session({
+  store: new RedisStore({ client: redis, prefix: 'sess:' }),
   secret: process.env.SESSION_SECRET || 'secret',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: isProd,
-    sameSite: isProd ? 'none' : 'lax',
+    secure: isProd,       // HTTPS only in production
+    sameSite: isProd ? 'none' : 'lax',  // cross-origin cookies in production
     maxAge: 24 * 60 * 60 * 1000
   }
 }));
@@ -53,16 +56,13 @@ app.use('/api/emails', emailRoutes);
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', uptime: process.uptime() }));
 
-// Re-enqueue scheduled emails that survived a restart (idempotent via jobId)
 async function reEnqueuePendingEmails() {
   const { rows } = await pool.query(
     `SELECT id, recipient_email, subject, body, user_email, scheduled_at
      FROM emails WHERE status = 'scheduled'`
   );
-
   let requeued = 0;
   const limit = parseInt(process.env.MAX_EMAILS_PER_HOUR || '200');
-
   for (const row of rows) {
     const delay = Math.max(0, new Date(row.scheduled_at).getTime() - Date.now());
     try {
@@ -79,7 +79,6 @@ async function reEnqueuePendingEmails() {
       }
     }
   }
-
   if (requeued > 0) console.log(`Re-enqueued ${requeued} pending emails`);
 }
 
