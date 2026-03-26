@@ -4,7 +4,10 @@ import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import session from 'express-session';
-import { RedisStore } from 'connect-redis';
+import connectRedis from 'connect-redis';
+
+// connect-redis v7: RedisStore is a class exported as default
+const RedisStore = connectRedis as any;
 import passport from './config/passport';
 import { initDatabase, pool } from './config/database';
 import { redis } from './config/redis';
@@ -36,10 +39,8 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Redis-backed session store — survives server restarts on Render
-const sessionStore = new RedisStore({ client: redis as any, prefix: 'sess:' });
-
 app.use(session({
-  store: sessionStore,
+  store: new RedisStore({ client: redis }),
   secret: process.env.SESSION_SECRET || 'secret',
   resave: false,
   saveUninitialized: false,
