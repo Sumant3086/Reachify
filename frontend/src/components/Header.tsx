@@ -1,33 +1,50 @@
+import { useState } from 'react';
 import { User } from '../types';
 import { logout } from '../api';
 
-interface HeaderProps {
-  user: User;
-  setUser: (user: User | null) => void;
-}
+interface Props { user: User; setUser: (u: User | null) => void; }
 
-function Header({ user, setUser }: HeaderProps) {
+function Header({ user, setUser }: Props) {
+  const [loggingOut, setLoggingOut] = useState(false);
+
   const handleLogout = async () => {
-    await logout();
-    setUser(null);
+    setLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setUser(null);
+    }
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">ReachInbox</h1>
-        
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <div className="font-medium text-gray-900">{user.name}</div>
-            <div className="text-sm text-gray-500">{user.email}</div>
+    <header className="bg-white border-b border-gray-200 px-6 py-3 sticky top-0 z-20 shadow-sm">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
           </div>
-          <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full" />
+          <span className="text-lg font-bold text-gray-900">ReachInbox</span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <img
+            src={user.avatar}
+            alt={user.name}
+            className="w-8 h-8 rounded-full ring-2 ring-gray-200"
+            onError={e => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=3b82f6&color=fff`; }}
+          />
+          <div className="hidden sm:block text-right">
+            <p className="text-sm font-medium text-gray-900 leading-tight">{user.name}</p>
+            <p className="text-xs text-gray-500 leading-tight">{user.email}</p>
+          </div>
           <button
             onClick={handleLogout}
-            className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition"
+            disabled={loggingOut}
+            className="ml-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition disabled:opacity-50"
           >
-            Logout
+            {loggingOut ? 'Logging out...' : 'Logout'}
           </button>
         </div>
       </div>

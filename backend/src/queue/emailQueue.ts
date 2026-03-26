@@ -6,16 +6,17 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const WORKER_CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || '5');
-const EMAIL_DELAY_MS = parseInt(process.env.EMAIL_DELAY_MS || '2000');
+const WORKER_CONCURRENCY  = parseInt(process.env.WORKER_CONCURRENCY  || '5');
+const EMAIL_DELAY_MS      = parseInt(process.env.EMAIL_DELAY_MS      || '2000');
 const MAX_EMAILS_PER_HOUR = parseInt(process.env.MAX_EMAILS_PER_HOUR || '200');
 
-interface EmailJobData {
+export interface EmailJobData {
   emailId: string;
   recipientEmail: string;
   subject: string;
   body: string;
   senderEmail: string;
+  hourlyLimit: number;
 }
 
 export const emailQueue = new Queue('email-queue', {
@@ -24,80 +25,69 @@ export const emailQueue = new Queue('email-queue', {
     attempts: 3,
     backoff: { type: 'exponential', delay: 5000 },
     removeOnComplete: { count: 1000 },
-    removeOnFail: { count: 5000 }
+    removeOnFail:     { count: 5000 }
   }
 });
 
-async function checkRateLimit(senderEmail: string): Promise<boolean> {
-  const hourKey = new Date().toISOString().slice(0, 13);
-  const client = await pool.connect();
-  
-  try {
-    await client.query(
-      `INSERT INTO rate_limits (hour_key, sender_email, count) 
-       VALUES ($1, $2, 1) 
-       ON CONFLICT (hour_key, sender_email) 
-       DO UPDATE SET count = rate_limits.count + 1`,
-      [hourKey, senderEmail]
-    );
-    
-    const result = await client.query(
-      'SELECT count FROM rate_limits WHERE hour_key = $1 AND sender_email = $2',
-      [hourKey, senderEmail]
-    );
-    
-    return result.rows[0].count <= MAX_EMAILS_PER_HOUR;
-  } finally {
-    client.release();
-  }
+// Redis-backed rate limit — safe across multiple workers
+async function checkRateLimit(senderEmail: string, limit: number): Promise<boolean> {
+  const key = `rate:${new Date().toISOString().slice(0, 13)}:${senderEmail}`;
+  const count = await redis.get(key);
+  return parseInt(count || '0') < limit;
+}
+
+// Atomic increment with TTL aligned to the current hour boundary
+async function incrementRateLimit(senderEmail: string): Promise<void> {
+  const key = `rate:${new Date().toISOString().slice(0, 13)}:${senderEmail}`;
+  const ttl = 3600 - (Math.floor(Date.now() / 1000) % 3600);
+  await redis.multi().incr(key).expire(key, ttl).exec();
 }
 
 export const emailWorker = new Worker<EmailJobData>(
   'email-queue',
   async (job: Job<EmailJobData>) => {
-    const { emailId, recipientEmail, subject, body, senderEmail } = job.data;
-    
-    const canSend = await checkRateLimit(senderEmail);
-    
-    if (!canSend) {
+    const { emailId, recipientEmail, subject, body, senderEmail, hourlyLimit } = job.data;
+    const limit = hourlyLimit || MAX_EMAILS_PER_HOUR;
+
+    // Rate limit check — reschedule to next hour if exceeded, never drop
+    if (!(await checkRateLimit(senderEmail, limit))) {
       const nextHour = new Date();
       nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
-      const delayMs = nextHour.getTime() - Date.now();
-      
-      await emailQueue.add('send-email', job.data, { delay: delayMs });
-      return { rescheduled: true, nextAttempt: nextHour };
+      await emailQueue.add('send-email', job.data, { delay: nextHour.getTime() - Date.now() });
+      console.log(`Rate limit hit — rescheduled ${emailId} → ${nextHour.toISOString()}`);
+      return { rescheduled: true };
     }
-    
-    await new Promise(resolve => setTimeout(resolve, EMAIL_DELAY_MS));
-    
+
+    // Throttle: minimum delay between sends
+    await new Promise(r => setTimeout(r, EMAIL_DELAY_MS));
+
     try {
       await sendEmail(recipientEmail, subject, body);
-      
+      await incrementRateLimit(senderEmail);
       await pool.query(
-        'UPDATE emails SET status = $1, sent_at = NOW() WHERE id = $2',
-        ['sent', emailId]
+        `UPDATE emails SET status='sent', sent_at=NOW() WHERE id=$1`,
+        [emailId]
       );
-      
-      return { success: true, emailId };
-    } catch (error: any) {
+      return { success: true };
+    } catch (err: any) {
       await pool.query(
-        'UPDATE emails SET status = $1, error_message = $2 WHERE id = $3',
-        ['failed', error.message, emailId]
+        `UPDATE emails SET status='failed', error_message=$1 WHERE id=$2`,
+        [err.message, emailId]
       );
-      throw error;
+      throw err; // triggers BullMQ retry with exponential backoff
     }
   },
   {
     connection: redis,
     concurrency: WORKER_CONCURRENCY,
-    limiter: { max: 1, duration: EMAIL_DELAY_MS }
+    // Enforce EMAIL_DELAY_MS gap between jobs across all workers
+    limiter: { max: 1, duration: EMAIL_DELAY_MS },
+    // Mark jobs stalled for >30s as failed so they retry
+    stalledInterval: 30_000,
+    maxStalledCount: 2
   }
 );
 
-emailWorker.on('completed', (job) => {
-  console.log(`Email job ${job.id} completed`);
-});
-
-emailWorker.on('failed', (job, err) => {
-  console.error(`Email job ${job?.id} failed:`, err.message);
-});
+emailWorker.on('completed', job => console.log(`✓ Job ${job.id} done`));
+emailWorker.on('failed',    (job, err) => console.error(`✗ Job ${job?.id} failed: ${err.message}`));
+emailWorker.on('stalled',   jobId => console.warn(`⚠ Job ${jobId} stalled`));

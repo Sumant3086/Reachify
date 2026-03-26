@@ -6,8 +6,20 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/auth': 'http://localhost:3001',
-      '/api': 'http://localhost:3001'
+      '/auth': { target: 'http://localhost:10000', changeOrigin: true },
+      '/api':  { target: 'http://localhost:10000', changeOrigin: true }
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          http:   ['axios']
+        }
+      }
+    },
+    sourcemap: false,
+    minify: 'esbuild'
   }
 });

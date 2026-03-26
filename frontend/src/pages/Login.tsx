@@ -1,6 +1,7 @@
 function Login() {
   const handleGoogleLogin = () => {
-    window.location.href = 'https://reachinbox-assignment-4fx6.onrender.com/auth/google';
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    window.location.href = `${apiUrl}/auth/google`;
   };
 
   return (
