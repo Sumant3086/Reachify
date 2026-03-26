@@ -101,4 +101,14 @@ async function start() {
 process.on('SIGTERM', async () => { await emailWorker.close(); process.exit(0); });
 process.on('SIGINT',  async () => { await emailWorker.close(); process.exit(0); });
 
+// Keep-alive ping every 14 min to prevent Render free tier cold starts
+if (process.env.NODE_ENV === 'production') {
+  const selfUrl = process.env.RENDER_EXTERNAL_URL || `https://reachinbox-assignment-4fx6.onrender.com`;
+  setInterval(() => {
+    fetch(`${selfUrl}/health`)
+      .then(() => console.log('Keep-alive ping OK'))
+      .catch(() => {});
+  }, 14 * 60 * 1000);
+}
+
 start();
