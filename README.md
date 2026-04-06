@@ -10,6 +10,12 @@ Production-grade email scheduler built for the ReachInbox hiring assignment.
 
 ---
 
+## ⚠️ Running Locally
+
+**Redis Issue:** Upstash Redis free tier exceeded. See `START_HERE.md` for quick fix.
+
+---
+
 ## Architecture
 
 ### How Scheduling Works

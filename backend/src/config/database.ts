@@ -10,7 +10,7 @@ export const pool = new Pool(
         ssl: { rejectUnauthorized: false },
         max: 10,              // max pool connections
         idleTimeoutMillis: 30_000,
-        connectionTimeoutMillis: 5_000
+        connectionTimeoutMillis: 20_000  // Increased for remote DB
       }
     : {
         host: process.env.DB_HOST,
@@ -20,7 +20,7 @@ export const pool = new Pool(
         database: process.env.DB_NAME,
         max: 10,
         idleTimeoutMillis: 30_000,
-        connectionTimeoutMillis: 5_000
+        connectionTimeoutMillis: 10_000
       }
 );
 
