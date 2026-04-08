@@ -171,6 +171,14 @@ function Dashboard({ user, setUser }: DashboardProps) {
     try {
       const emailIds = Array.from(selectedEmails);
       console.log('Cancelling emails:', emailIds);
+      console.log('Selected emails details:', 
+        scheduledEmails.filter(e => emailIds.includes(e.id)).map(e => ({ 
+          id: e.id, 
+          status: e.status, 
+          email: e.recipient_email 
+        }))
+      );
+      
       const response = await bulkCancelEmails(emailIds);
       console.log('Cancel response:', response);
       setSelectedEmails(new Set());
@@ -179,8 +187,14 @@ function Dashboard({ user, setUser }: DashboardProps) {
       setError(''); // Clear any errors
     } catch (err: any) {
       console.error('Cancel error:', err);
-      const errorMessage = err.response?.data?.error || err.response?.data?.details || 'Failed to cancel emails';
+      console.error('Error response:', err.response?.data);
+      const errorMessage = err.response?.data?.error || err.response?.data?.details || err.message || 'Failed to cancel emails';
       setError(errorMessage);
+      
+      // If it's a "no scheduled emails" error, refresh the list
+      if (errorMessage.includes('scheduled')) {
+        await loadEmails(false);
+      }
     } finally {
       setBulkActionLoading(false);
     }

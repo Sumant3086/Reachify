@@ -287,6 +287,7 @@ router.post('/bulk-cancel', isAuthenticated, async (req: Request, res: Response)
     logger.info({ 
       emailIds: emailIds?.length || 0, 
       userId: user?.id,
+      emailIdsArray: emailIds,
       body: req.body 
     }, 'Bulk cancel request received');
 
@@ -319,13 +320,19 @@ router.post('/bulk-cancel', isAuthenticated, async (req: Request, res: Response)
     }
 
     // Verify ownership and get scheduled emails
+    logger.info({ emailIds, userId: user.id }, 'Querying database for emails');
+    
     const result = await pool.query(
       `SELECT id, status FROM emails 
        WHERE id = ANY($1::uuid[]) AND user_id = $2`,
       [emailIds, user.id]
     );
 
-    logger.info({ found: result.rows.length, emailIds: result.rows }, 'Found emails');
+    logger.info({ 
+      found: result.rows.length, 
+      requested: emailIds.length,
+      emails: result.rows 
+    }, 'Found emails in database');
 
     const scheduledEmails = result.rows.filter(r => r.status === 'scheduled');
     const validIds = scheduledEmails.map(r => r.id);
