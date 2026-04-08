@@ -125,6 +125,28 @@ Node.js + Express + TypeScript
 
 ## 🚀 Quick Start
 
+### Keep Backend Alive (FREE - No Cold Starts!)
+
+**Problem**: Render free tier sleeps after 15 minutes, causing 50+ second delays.
+
+**Solution**: Use [UptimeRobot](https://uptimerobot.com) (100% FREE forever)
+
+1. Sign up at [uptimerobot.com](https://uptimerobot.com) (free account)
+2. Click "Add New Monitor"
+3. Configure:
+   - Monitor Type: HTTP(s)
+   - Friendly Name: Reachify Backend
+   - URL: `https://reachify-backend-jep1.onrender.com/health`
+   - Monitoring Interval: 5 minutes (free tier)
+4. Click "Create Monitor"
+
+**Result**: Backend stays awake 24/7, zero cold starts! ✅
+
+**Alternative FREE Options**:
+- [Cron-job.org](https://cron-job.org) - Ping every 5 minutes
+- [Freshping](https://www.freshworks.com/website-monitoring/) - Free monitoring
+- GitHub Actions (see below for automated setup)
+
 ### Prerequisites
 - Node.js 18+ and npm
 - PostgreSQL 14+
@@ -372,10 +394,36 @@ npm run build
 
 ### Common Issues
 
-**1. Backend takes 50+ seconds to load**
-- This is normal for Render.com free tier (cold start)
-- Solution: Use [UptimeRobot](https://uptimerobot.com) (free) to ping your backend every 5 minutes
-- The app includes a 60-second timeout with user-friendly loading message
+**1. Backend takes 50+ seconds to load (SOLVED!)**
+
+**FREE Solutions (Choose ONE):**
+
+**Option A: UptimeRobot (Recommended - Easiest)**
+1. Go to [uptimerobot.com](https://uptimerobot.com)
+2. Sign up (free forever)
+3. Add monitor: `https://reachify-backend-jep1.onrender.com/health`
+4. Set interval: 5 minutes
+5. Done! Backend stays alive 24/7 ✅
+
+**Option B: GitHub Actions (Automated)**
+- Already configured in `.github/workflows/keep-alive.yml`
+- Pings backend every 5 minutes automatically
+- Enable in: Repository → Actions → Enable workflows
+- 100% free with GitHub
+
+**Option C: Cron-job.org**
+1. Go to [cron-job.org](https://cron-job.org)
+2. Create free account
+3. Add job: `https://reachify-backend-jep1.onrender.com/health`
+4. Schedule: Every 5 minutes
+
+**Option D: Self-Ping (Already Enabled)**
+- Backend pings itself every 14 minutes
+- Works but less reliable than external monitoring
+- No setup needed - already running!
+
+**Cost**: $0 (All options are FREE forever)
+**Result**: Zero cold starts, instant response times
 
 **2. "No valid emails found in file" error**
 - Ensure CSV has an "email" column header

@@ -491,14 +491,24 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-// Keep-alive for free tier
+// Keep-alive for free tier (self-ping)
 if (isProd) {
-  const selfUrl = process.env.RENDER_EXTERNAL_URL || `https://reachify-api.onrender.com`;
+  const selfUrl = process.env.RENDER_EXTERNAL_URL || `https://reachify-backend-jep1.onrender.com`;
+  
+  // Ping every 14 minutes (just before 15-min timeout)
   setInterval(() => {
     fetch(`${selfUrl}/health`)
-      .then(() => logger.debug('Keep-alive ping OK'))
-      .catch((err) => logger.warn({ error: err.message }, 'Keep-alive ping failed'));
-  }, 14 * 60 * 1000);
+      .then(res => {
+        if (res.ok) {
+          logger.debug('Keep-alive ping successful');
+        } else {
+          logger.warn({ status: res.status }, 'Keep-alive ping failed');
+        }
+      })
+      .catch((err) => logger.warn({ error: err.message }, 'Keep-alive ping error'));
+  }, 14 * 60 * 1000); // 14 minutes
+  
+  logger.info('Keep-alive mechanism enabled (14-minute interval)');
 }
 
 start();

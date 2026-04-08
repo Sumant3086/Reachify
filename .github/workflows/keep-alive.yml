@@ -1,0 +1,27 @@
+name: Keep Backend Alive
+
+on:
+  schedule:
+    # Run every 5 minutes (GitHub Actions free tier)
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Backend Health Endpoint
+        run: |
+          echo "Pinging backend to prevent cold start..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://reachify-backend-jep1.onrender.com/health)
+          echo "Response code: $response"
+          if [ $response -eq 200 ]; then
+            echo "✅ Backend is alive!"
+          else
+            echo "⚠️ Backend returned $response"
+          fi
+      
+      - name: Ping Frontend
+        run: |
+          echo "Checking frontend..."
+          curl -s -o /dev/null -w "Frontend status: %{http_code}\n" https://reachify-io.onrender.com

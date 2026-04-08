@@ -48,7 +48,7 @@ function App() {
             Free tier servers sleep after inactivity. First load may take up to 60 seconds.
           </p>
           <p className="text-blue-600 dark:text-blue-400 text-xs mt-2">
-            💡 Upgrade to paid plan for instant response times
+            💡 Tip: If this takes too long, try refreshing the page
           </p>
         </div>
       </div>
@@ -60,7 +60,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login />} />
-        <Route path="/dashboard" element={user ? <Dashboard user={user} setUser={setUser} /> : <Navigate to="/login" />} />
+        <Route path="/dashboard" element={user ? <Dashboard user={user} setUser={setUser} /> : <Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

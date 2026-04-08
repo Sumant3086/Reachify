@@ -11,9 +11,9 @@ export const pool = new Pool(
         max: 20, // Maximum pool size
         min: 2, // Minimum pool size
         idleTimeoutMillis: 30_000,
-        connectionTimeoutMillis: 60_000,
-        statement_timeout: 60_000,
-        query_timeout: 60_000,
+        connectionTimeoutMillis: 10_000, // Reduced from 60s to 10s
+        statement_timeout: 30_000, // Reduced from 60s to 30s
+        query_timeout: 30_000, // Reduced from 60s to 30s
         // Enable prepared statements for better performance
         allowExitOnIdle: false
       }
@@ -40,7 +40,7 @@ pool.on('connect', (client) => {
 pool.on('remove', () => console.log('Database client removed from pool'));
 
 export async function initDatabase() {
-  let retries = 5; // Increased retries
+  let retries = 3; // Reduced from 5
   let client;
   
   while (retries > 0) {
@@ -53,8 +53,8 @@ export async function initDatabase() {
       retries--;
       if (retries === 0) throw err;
       console.log(`Database connection failed: ${err.message}`);
-      console.log(`Retrying in 10 seconds... (${retries} attempts left)`);
-      await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds
+      console.log(`Retrying in 2 seconds... (${retries} attempts left)`);
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Reduced to 2 seconds
     }
   }
   

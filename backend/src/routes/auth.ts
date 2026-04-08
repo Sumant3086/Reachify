@@ -34,10 +34,21 @@ router.get(
 );
 
 router.get('/user', (req, res) => {
+  logger.info({ 
+    isAuthenticated: req.isAuthenticated(), 
+    sessionID: req.sessionID,
+    user: req.user ? 'exists' : 'null',
+    cookies: req.headers.cookie ? 'present' : 'missing'
+  }, 'User check request');
+  
   if (req.isAuthenticated()) {
     res.json(req.user);
   } else {
-    res.status(401).json({ error: 'Not authenticated' });
+    res.status(401).json({ 
+      error: 'Not authenticated',
+      sessionID: req.sessionID,
+      hasCookies: !!req.headers.cookie
+    });
   }
 });
 
