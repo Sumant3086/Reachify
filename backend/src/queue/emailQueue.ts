@@ -42,10 +42,13 @@ async function incrementRateLimit(userId: string): Promise<void> {
   const hourKey = new Date().toISOString().slice(0, 13);
   const key = `rate:${hourKey}:${userId}`;
   const ttl = 3600 - (Math.floor(Date.now() / 1000) % 3600);
-  const pipeline = redis.multi();
-  pipeline.incr(key);
-  pipeline.expire(key, ttl);
-  await pipeline.exec();
+  
+  try {
+    await redis.incr(key);
+    await redis.expire(key, ttl);
+  } catch (err) {
+    logger.error({ error: err }, 'Failed to increment rate limit');
+  }
 }
 
 export const emailWorker = new Worker<EmailJobData>(
