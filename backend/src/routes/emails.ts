@@ -284,6 +284,8 @@ router.post('/bulk-cancel', isAuthenticated, async (req: Request, res: Response)
     const { emailIds } = req.body;
     const user = req.user as any;
 
+    logger.info({ emailIds, userId: user.id }, 'Bulk cancel request received');
+
     if (!Array.isArray(emailIds) || emailIds.length === 0) {
       return res.status(400).json({ error: 'Email IDs array is required' });
     }
@@ -294,24 +296,42 @@ router.post('/bulk-cancel', isAuthenticated, async (req: Request, res: Response)
 
     // Verify ownership and get scheduled emails
     const result = await pool.query(
-      `SELECT id FROM emails 
-       WHERE id = ANY($1) AND user_id = $2 AND status = 'scheduled'`,
+      `SELECT id, status FROM emails 
+       WHERE id = ANY($1) AND user_id = $2`,
       [emailIds, user.id]
     );
 
-    const validIds = result.rows.map(r => r.id);
+    logger.info({ found: result.rows.length, emailIds: result.rows }, 'Found emails');
+
+    const scheduledEmails = result.rows.filter(r => r.status === 'scheduled');
+    const validIds = scheduledEmails.map(r => r.id);
 
     if (validIds.length === 0) {
-      return res.status(404).json({ error: 'No valid scheduled emails found' });
+      logger.warn({ emailIds, userId: user.id, foundEmails: result.rows }, 'No scheduled emails found to cancel');
+      return res.status(404).json({ 
+        error: 'No valid scheduled emails found',
+        details: `Found ${result.rows.length} emails, but none are in scheduled status`
+      });
     }
 
     // Remove from queue
-    await Promise.all(
+    const removeResults = await Promise.allSettled(
       validIds.map(async (id) => {
-        const job = await emailQueue.getJob(id);
-        if (job) await job.remove();
+        try {
+          const job = await emailQueue.getJob(id);
+          if (job) {
+            await job.remove();
+            return { id, removed: true };
+          }
+          return { id, removed: false, reason: 'Job not found in queue' };
+        } catch (err: any) {
+          logger.warn({ id, error: err.message }, 'Failed to remove job from queue');
+          return { id, removed: false, reason: err.message };
+        }
       })
     );
+
+    logger.info({ removeResults }, 'Queue removal results');
 
     // Update database
     await pool.query(
@@ -320,11 +340,15 @@ router.post('/bulk-cancel', isAuthenticated, async (req: Request, res: Response)
       [validIds]
     );
 
-    logger.info({ userId: user.id, count: validIds.length }, 'Bulk cancelled emails');
-    return res.json({ success: true, cancelled: validIds.length });
+    logger.info({ userId: user.id, count: validIds.length }, 'Bulk cancelled emails successfully');
+    return res.json({ 
+      success: true, 
+      cancelled: validIds.length,
+      message: `Successfully cancelled ${validIds.length} email(s)`
+    });
   } catch (err: any) {
-    logger.error({ error: err.message }, 'Bulk cancel failed');
-    return res.status(500).json({ error: 'Failed to cancel emails' });
+    logger.error({ error: err.message, stack: err.stack }, 'Bulk cancel failed');
+    return res.status(500).json({ error: 'Failed to cancel emails', details: err.message });
   }
 });
 
