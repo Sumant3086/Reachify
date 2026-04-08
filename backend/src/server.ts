@@ -96,10 +96,11 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'secret',
   resave: false,
   saveUninitialized: false,
+  rolling: true, // Reset expiry on every request
   cookie: {
     secure: isProd,
     sameSite: isProd ? 'none' : 'lax',
-    maxAge: 24 * 60 * 60 * 1000,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     httpOnly: true
   },
   name: 'sessionId' // Custom session cookie name

@@ -5,7 +5,7 @@ import EmailPreviewModal from '../components/EmailPreviewModal';
 import AnalyticsDashboard from '../components/AnalyticsDashboard';
 import TemplatesModal from '../components/TemplatesModal';
 import { ErrorBoundary } from '../utils/errorBoundary';
-import { getScheduledEmails, getSentEmails, bulkCancelEmails } from '../api';
+import { getScheduledEmails, getSentEmails, bulkCancelEmails, getUser } from '../api';
 import { User, ScheduledEmail, SentEmail } from '../types';
 import { useWebSocket } from '../hooks/useWebSocket';
 import axios from 'axios';
@@ -30,6 +30,37 @@ function Dashboard({ user, setUser }: DashboardProps) {
   const [subscription, setSubscription] = useState<any>(null);
   const [permissions, setPermissions] = useState<any>(null);
 
+  // Keep session alive with user activity
+  useEffect(() => {
+    const keepAlive = () => {
+      getUser().catch(() => {
+        // Session expired
+        setUser(null);
+        window.location.href = '/';
+      });
+    };
+
+    // Refresh session every 5 minutes
+    const interval = setInterval(keepAlive, 5 * 60 * 1000);
+
+    // Also refresh on user activity (clicks, typing)
+    let activityTimeout: number;
+    const handleActivity = () => {
+      clearTimeout(activityTimeout);
+      activityTimeout = window.setTimeout(keepAlive, 30000); // 30 seconds after activity
+    };
+
+    window.addEventListener('click', handleActivity);
+    window.addEventListener('keydown', handleActivity);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(activityTimeout);
+      window.removeEventListener('click', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+    };
+  }, [setUser]);
+
   const loadEmails = useCallback(async (showSpinner = true) => {
     if (showSpinner) setLoading(true);
     setError('');
@@ -41,12 +72,21 @@ function Dashboard({ user, setUser }: DashboardProps) {
         const res = await getSentEmails();
         setSentEmails(res.data);
       }
-    } catch {
-      setError('Failed to load emails. Retrying...');
+    } catch (err: any) {
+      // Check if session expired
+      if (err.response?.status === 401) {
+        setError('Session expired. Redirecting to login...');
+        setTimeout(() => {
+          setUser(null);
+          window.location.href = '/';
+        }, 2000);
+      } else {
+        setError('Failed to load emails. Please refresh the page.');
+      }
     } finally {
       setLoading(false);
     }
-  }, [activeTab]);
+  }, [activeTab, setUser]);
 
   // WebSocket for real-time updates
   const handleEmailUpdate = useCallback((data: { emailId: string; status: string }) => {

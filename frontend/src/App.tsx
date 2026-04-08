@@ -18,6 +18,24 @@ function App() {
       .then((res) => setUser(res.data))
       .catch(() => setUser(null))
       .finally(() => { clearTimeout(timeout); setLoading(false); });
+
+    // Keep session alive - refresh every 5 minutes
+    const sessionRefresh = setInterval(() => {
+      if (window.location.pathname === '/dashboard') {
+        getUser()
+          .then((res) => setUser(res.data))
+          .catch(() => {
+            // Session expired, redirect to login
+            setUser(null);
+            window.location.href = '/';
+          });
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(sessionRefresh);
+    };
   }, []);
 
   if (loading) {
