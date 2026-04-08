@@ -1,4 +1,9 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+
+// Extend Axios config to include metadata
+interface AxiosRequestConfigWithMetadata extends InternalAxiosRequestConfig {
+  metadata?: { startTime: Date };
+}
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '',
@@ -11,7 +16,7 @@ const api = axios.create({
 
 // Request interceptor for logging
 api.interceptors.request.use(
-  (config) => {
+  (config: AxiosRequestConfigWithMetadata) => {
     // Add timestamp for request tracking
     config.metadata = { startTime: new Date() };
     return config;
@@ -23,7 +28,8 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => {
     // Log response time
-    const duration = new Date().getTime() - response.config.metadata?.startTime?.getTime();
+    const config = response.config as AxiosRequestConfigWithMetadata;
+    const duration = new Date().getTime() - (config.metadata?.startTime?.getTime() || 0);
     if (duration > 3000) {
       console.warn(`Slow API call: ${response.config.url} took ${duration}ms`);
     }
