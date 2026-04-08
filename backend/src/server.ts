@@ -180,12 +180,19 @@ app.get('/', (_req, res) => {
     name: 'Reachify API',
     version: '1.0.0',
     status: 'running',
+    timestamp: new Date().toISOString(),
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    config: {
+      minEmailDelay: '10 seconds (updated)',
+      sessionLifetime: '7 days',
+      timezone: 'UTC (converts to IST on frontend)'
+    },
     endpoints: {
       health: '/health',
       metrics: '/metrics',
       auth: '/auth/*',
-      emails: '/emails/*',
-      payment: '/payment/*'
+      emails: '/api/emails/*',
+      payment: '/api/payment/*'
     }
   });
 });
@@ -216,7 +223,9 @@ app.get('/health', async (_req, res) => {
         active: queueCounts.active || 0,
         completed: queueCounts.completed || 0,
         failed: queueCounts.failed || 0
-      }
+      },
+      version: '1.0.0',
+      lastDeploy: new Date().toISOString()
     });
   } catch (error: any) {
     logger.error({ error: error.message }, 'Health check failed');
