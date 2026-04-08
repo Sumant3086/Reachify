@@ -15,10 +15,9 @@ function ComposeModal({ onClose, onSuccess }: Props) {
   const [hourlyLimit, setHourlyLimit]       = useState('200');
   const [loading, setLoading]               = useState(false);
   const [error, setError]                   = useState('');
+  const [isDragging, setIsDragging]         = useState(false);
 
-  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
+  const processFile = useCallback((f: File) => {
     setFile(f);
     const reader = new FileReader();
     reader.onload = ev => {
@@ -28,9 +27,36 @@ function ComposeModal({ onClose, onSuccess }: Props) {
     reader.readAsText(f);
   }, []);
 
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) processFile(f);
+  }, [processFile]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f && (f.name.endsWith('.csv') || f.name.endsWith('.txt'))) {
+      processFile(f);
+    } else {
+      setError('Please drop a CSV or TXT file');
+      setTimeout(() => setError(''), 3000);
+    }
+  }, [processFile]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) return;
+    if (!file || loading) return; // Prevent double submit
     setError('');
     setLoading(true);
 
@@ -47,9 +73,15 @@ function ComposeModal({ onClose, onSuccess }: Props) {
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to schedule emails. Please try again.');
+      const errorMsg = err.response?.data?.error || 'Failed to schedule emails. Please try again.';
+      setError(errorMsg);
+      // Don't reset loading if it's a duplicate request error
+      if (!errorMsg.includes('wait before submitting')) {
+        setLoading(false);
+      }
     } finally {
-      setLoading(false);
+      // Reset loading after a delay to prevent rapid resubmission
+      setTimeout(() => setLoading(false), 1000);
     }
   };
 
@@ -88,19 +120,56 @@ function ComposeModal({ onClose, onSuccess }: Props) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email List (CSV / TXT)</label>
-            <input type="file" accept=".csv,.txt" onChange={handleFileChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-              required />
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-all ${
+                isDragging 
+                  ? 'border-blue-500 bg-blue-50' 
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              <input 
+                type="file" 
+                accept=".csv,.txt" 
+                onChange={handleFileChange}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                required={!file}
+              />
+              <div className="pointer-events-none">
+                <svg className="w-12 h-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                {file ? (
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{file.name}</p>
+                    <p className="text-xs text-gray-500 mt-1">Click or drag to replace</p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Drop your CSV/TXT file here</p>
+                    <p className="text-xs text-gray-500 mt-1">or click to browse</p>
+                  </div>
+                )}
+              </div>
+            </div>
             {emailCount > 0 && (
-              <p className="mt-1.5 text-sm text-green-600 font-medium">{emailCount} unique email{emailCount !== 1 ? 's' : ''} detected</p>
+              <p className="mt-2 text-sm text-green-600 font-medium flex items-center gap-1">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                {emailCount} unique email{emailCount !== 1 ? 's' : ''} detected
+              </p>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Start Time (with milliseconds)</label>
               <input type="datetime-local" value={startTime} onChange={e => setStartTime(e.target.value)}
-                className={inputCls} required />
+                step="0.001" className={inputCls} required />
+              <p className="mt-1 text-xs text-gray-400">Supports millisecond precision</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Delay Between Emails (sec)</label>

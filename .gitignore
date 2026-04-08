@@ -1,8 +1,38 @@
+# Dependencies
 node_modules
-.env
-.env.local
+.pnp
+.pnp.js
+
+# Testing
+coverage
+*.log
+
+# Production
 dist
 build
-*.log
-.DS_Store
+
+# Environment
+.env
+.env.local
+.env.production
+.env.development
+.session-secret
+
+# IDE
 .vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Misc
+.cache
+.temp
+*.tsbuildinfo

@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: reachinbox-backend
+    name: reachify-backend
     runtime: node
     rootDir: backend
     buildCommand: npm install && npm run build
@@ -10,7 +10,7 @@ services:
         value: production
 
   - type: web
-    name: reachinbox-frontend
+    name: reachify-frontend
     runtime: static
     rootDir: frontend
     buildCommand: npm install && npm run build

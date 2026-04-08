@@ -1,28 +1,33 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import passport from '../config/passport';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'], prompt: 'select_account' }));
+router.get('/google', passport.authenticate('google', { 
+  scope: ['profile', 'email'], 
+  prompt: 'select_account' 
+}));
 
 router.get(
   '/google/callback',
   (req: Request, res: Response, next: NextFunction) => {
     passport.authenticate('google', (err: any, user: any) => {
       if (err) {
-        console.error('Google OAuth error:', err);
-        return res.redirect(process.env.FRONTEND_URL + '?error=oauth_failed');
+        logger.error({ error: err.message }, 'Google OAuth error');
+        return res.redirect(`${process.env.FRONTEND_URL}?error=oauth_failed`);
       }
       if (!user) {
-        console.error('Google OAuth: no user returned');
-        return res.redirect(process.env.FRONTEND_URL + '?error=no_user');
+        logger.warn('Google OAuth: no user returned');
+        return res.redirect(`${process.env.FRONTEND_URL}?error=no_user`);
       }
       req.logIn(user, (loginErr) => {
         if (loginErr) {
-          console.error('Session login error:', loginErr);
-          return res.redirect(process.env.FRONTEND_URL + '?error=session_failed');
+          logger.error({ error: loginErr.message }, 'Session login error');
+          return res.redirect(`${process.env.FRONTEND_URL}?error=session_failed`);
         }
-        res.redirect(process.env.FRONTEND_URL + '/dashboard');
+        logger.info({ userId: user.id }, 'User logged in successfully');
+        res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
       });
     })(req, res, next);
   }
@@ -37,7 +42,16 @@ router.get('/user', (req, res) => {
 });
 
 router.post('/logout', (req, res) => {
-  req.logout(() => res.json({ success: true }));
+  const userId = (req.user as any)?.id;
+  req.logout((err) => {
+    if (err) {
+      logger.error({ error: err.message, userId }, 'Logout error');
+      res.status(500).json({ error: 'Logout failed' });
+    } else {
+      logger.info({ userId }, 'User logged out');
+      res.json({ success: true });
+    }
+  });
 });
 
 export default router;

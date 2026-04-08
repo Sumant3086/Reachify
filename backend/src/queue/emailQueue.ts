@@ -1,13 +1,14 @@
 import { Queue, Worker, Job } from 'bullmq';
-import { redis } from '../config/redis';
+import { redis } from '../config/redisWithFallback';
 import { sendEmail } from '../services/emailService';
 import { pool } from '../config/database';
+import { logger } from '../utils/logger';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const WORKER_CONCURRENCY  = parseInt(process.env.WORKER_CONCURRENCY  || '5');
-const EMAIL_DELAY_MS      = parseInt(process.env.EMAIL_DELAY_MS      || '2000');
+const WORKER_CONCURRENCY  = parseInt(process.env.WORKER_CONCURRENCY  || '10'); // Increased for faster processing
+const EMAIL_DELAY_MS      = parseInt(process.env.EMAIL_DELAY_MS      || '100'); // Reduced to 100ms for near-instant sending
 const MAX_EMAILS_PER_HOUR = parseInt(process.env.MAX_EMAILS_PER_HOUR || '200');
 
 export interface EmailJobData {
@@ -15,12 +16,12 @@ export interface EmailJobData {
   recipientEmail: string;
   subject: string;
   body: string;
-  senderEmail: string;
+  userId: string;
   hourlyLimit: number;
 }
 
 export const emailQueue = new Queue('email-queue', {
-  connection: redis,
+  connection: (redis as any).getRedisInstance() || redis as any,
   defaultJobOptions: {
     attempts: 3,
     backoff: { type: 'exponential', delay: 5000 },
@@ -29,16 +30,17 @@ export const emailQueue = new Queue('email-queue', {
   }
 });
 
-// Redis-backed rate limit — safe across multiple workers
-async function checkRateLimit(senderEmail: string, limit: number): Promise<boolean> {
-  const key = `rate:${new Date().toISOString().slice(0, 13)}:${senderEmail}`;
+// Per-user rate limiting with Redis
+async function checkRateLimit(userId: string, limit: number): Promise<boolean> {
+  const hourKey = new Date().toISOString().slice(0, 13); // YYYY-MM-DDTHH
+  const key = `rate:${hourKey}:${userId}`;
   const count = await redis.get(key);
   return parseInt(count || '0') < limit;
 }
 
-// Atomic increment with TTL aligned to the current hour boundary
-async function incrementRateLimit(senderEmail: string): Promise<void> {
-  const key = `rate:${new Date().toISOString().slice(0, 13)}:${senderEmail}`;
+async function incrementRateLimit(userId: string): Promise<void> {
+  const hourKey = new Date().toISOString().slice(0, 13);
+  const key = `rate:${hourKey}:${userId}`;
   const ttl = 3600 - (Math.floor(Date.now() / 1000) % 3600);
   await redis.multi().incr(key).expire(key, ttl).exec();
 }
@@ -46,48 +48,111 @@ async function incrementRateLimit(senderEmail: string): Promise<void> {
 export const emailWorker = new Worker<EmailJobData>(
   'email-queue',
   async (job: Job<EmailJobData>) => {
-    const { emailId, recipientEmail, subject, body, senderEmail, hourlyLimit } = job.data;
+    const { emailId, recipientEmail, subject, body, userId, hourlyLimit } = job.data;
     const limit = hourlyLimit || MAX_EMAILS_PER_HOUR;
 
-    // Rate limit check — reschedule to next hour if exceeded, never drop
-    if (!(await checkRateLimit(senderEmail, limit))) {
+    logger.info({ emailId, recipientEmail, userId, attempt: job.attemptsMade + 1 }, 'Processing email job');
+
+    // Per-user rate limit check
+    if (!(await checkRateLimit(userId, limit))) {
       const nextHour = new Date();
       nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
-      await emailQueue.add('send-email', job.data, { delay: nextHour.getTime() - Date.now() });
-      console.log(`Rate limit hit — rescheduled ${emailId} → ${nextHour.toISOString()}`);
+      const delay = nextHour.getTime() - Date.now();
+      
+      await emailQueue.add('send-email', job.data, { 
+        delay, 
+        jobId: `${emailId}-retry-${Date.now()}` 
+      });
+      
+      logger.info({ emailId, userId }, 'Rate limit hit - rescheduled to next hour');
       return { rescheduled: true };
     }
 
-    // Throttle: minimum delay between sends
-    await new Promise(r => setTimeout(r, EMAIL_DELAY_MS));
-
     try {
       await sendEmail(recipientEmail, subject, body);
-      await incrementRateLimit(senderEmail);
+      await incrementRateLimit(userId);
+      
       await pool.query(
-        `UPDATE emails SET status='sent', sent_at=NOW() WHERE id=$1`,
+        `UPDATE emails SET status='sent', sent_at=NOW(), updated_at=NOW() WHERE id=$1`,
         [emailId]
       );
+      
+      logger.info({ emailId, recipientEmail, userId }, 'Email sent successfully');
       return { success: true };
     } catch (err: any) {
+      const errorMessage = err.message || 'Unknown error';
+      
+      // Update database with error
       await pool.query(
-        `UPDATE emails SET status='failed', error_message=$1 WHERE id=$2`,
-        [err.message, emailId]
+        `UPDATE emails SET status='failed', error_message=$1, updated_at=NOW() WHERE id=$2`,
+        [errorMessage, emailId]
       );
-      throw err; // triggers BullMQ retry with exponential backoff
+      
+      logger.error({ 
+        emailId, 
+        recipientEmail, 
+        userId, 
+        error: errorMessage,
+        attempt: job.attemptsMade + 1,
+        maxAttempts: 3
+      }, 'Email send failed');
+      
+      // Throw error to trigger retry mechanism
+      throw new Error(errorMessage);
     }
   },
   {
-    connection: redis,
+    connection: (redis as any).getRedisInstance() || redis as any,
     concurrency: WORKER_CONCURRENCY,
-    // Enforce EMAIL_DELAY_MS gap between jobs across all workers
-    limiter: { max: 1, duration: EMAIL_DELAY_MS },
-    // Mark jobs stalled for >30s as failed so they retry
+    limiter: { max: 10, duration: 1000 }, // 10 emails per second max
     stalledInterval: 30_000,
-    maxStalledCount: 2
+    maxStalledCount: 2,
+    settings: {
+      backoffStrategy: (attemptsMade: number) => {
+        // Exponential backoff: 5s, 10s, 20s
+        return Math.min(5000 * Math.pow(2, attemptsMade), 20000);
+      }
+    }
   }
 );
 
-emailWorker.on('completed', job => console.log(`✓ Job ${job.id} done`));
-emailWorker.on('failed',    (job, err) => console.error(`✗ Job ${job?.id} failed: ${err.message}`));
-emailWorker.on('stalled',   jobId => console.warn(`⚠ Job ${jobId} stalled`));
+// Remove all existing listeners to prevent memory leaks on hot reload
+emailWorker.removeAllListeners();
+
+emailWorker.on('completed', job => {
+  logger.info({ 
+    jobId: job.id, 
+    emailId: job.data.emailId,
+    duration: Date.now() - job.processedOn!
+  }, 'Job completed');
+});
+
+emailWorker.on('failed', (job, err) => {
+  logger.error({ 
+    jobId: job?.id, 
+    emailId: job?.data?.emailId,
+    error: err.message,
+    attempts: job?.attemptsMade,
+    maxAttempts: 3
+  }, 'Job failed');
+});
+
+emailWorker.on('stalled', jobId => {
+  logger.warn({ jobId }, 'Job stalled - will be retried');
+});
+
+emailWorker.on('ready', () => {
+  logger.info('Email worker is ready and listening for jobs');
+});
+
+emailWorker.on('error', err => {
+  logger.error({ error: err.message, stack: err.stack }, 'Worker error');
+});
+
+emailWorker.on('active', (job) => {
+  logger.debug({ 
+    jobId: job.id, 
+    emailId: job.data.emailId,
+    recipient: job.data.recipientEmail
+  }, 'Job started processing');
+});
