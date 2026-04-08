@@ -284,10 +284,34 @@ router.post('/bulk-cancel', isAuthenticated, async (req: Request, res: Response)
     const { emailIds } = req.body;
     const user = req.user as any;
 
-    logger.info({ emailIds, userId: user.id }, 'Bulk cancel request received');
+    logger.info({ 
+      emailIds: emailIds?.length || 0, 
+      userId: user?.id,
+      body: req.body 
+    }, 'Bulk cancel request received');
 
-    if (!Array.isArray(emailIds) || emailIds.length === 0) {
-      return res.status(400).json({ error: 'Email IDs array is required' });
+    // Validate input
+    if (!emailIds) {
+      logger.warn('Missing emailIds in request body');
+      return res.status(400).json({ 
+        error: 'Email IDs are required',
+        details: 'Request body must include emailIds array'
+      });
+    }
+
+    if (!Array.isArray(emailIds)) {
+      logger.warn({ emailIds, type: typeof emailIds }, 'emailIds is not an array');
+      return res.status(400).json({ 
+        error: 'Email IDs must be an array',
+        details: `Received ${typeof emailIds} instead of array`
+      });
+    }
+
+    if (emailIds.length === 0) {
+      return res.status(400).json({ 
+        error: 'Email IDs array is empty',
+        details: 'Please select at least one email to cancel'
+      });
     }
 
     if (emailIds.length > 100) {
@@ -297,7 +321,7 @@ router.post('/bulk-cancel', isAuthenticated, async (req: Request, res: Response)
     // Verify ownership and get scheduled emails
     const result = await pool.query(
       `SELECT id, status FROM emails 
-       WHERE id = ANY($1) AND user_id = $2`,
+       WHERE id = ANY($1::uuid[]) AND user_id = $2`,
       [emailIds, user.id]
     );
 
@@ -336,7 +360,7 @@ router.post('/bulk-cancel', isAuthenticated, async (req: Request, res: Response)
     // Update database
     await pool.query(
       `UPDATE emails SET status='cancelled', updated_at=NOW() 
-       WHERE id = ANY($1)`,
+       WHERE id = ANY($1::uuid[])`,
       [validIds]
     );
 
