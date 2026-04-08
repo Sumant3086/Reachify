@@ -171,6 +171,22 @@ const cacheMiddleware = (duration: number) => {
 app.use('/api/emails/stats', cacheMiddleware(30)); // 30 seconds
 app.use('/api/emails/templates', cacheMiddleware(60)); // 1 minute
 
+// Root route for health checks
+app.get('/', (_req, res) => {
+  res.json({
+    name: 'Reachify API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      health: '/health',
+      metrics: '/metrics',
+      auth: '/auth/*',
+      emails: '/emails/*',
+      payment: '/payment/*'
+    }
+  });
+});
+
 // Health check with detailed info
 app.get('/health', async (_req, res) => {
   try {
