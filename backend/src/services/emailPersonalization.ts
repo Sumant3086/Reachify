@@ -61,9 +61,12 @@ export function parseCSVWithHeaders(content: string): { emails: string[]; data: 
 export function personalizeEmail(template: string, data: EmailData): string {
   let result = template;
   
-  Object.keys(data).forEach(key => {
-    const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'gi');
-    result = result.replace(regex, data[key] || '');
+  // Replace all placeholders found in template
+  const placeholderRegex = /{{\s*([a-zA-Z0-9_]+)\s*}}/g;
+  result = result.replace(placeholderRegex, (match, key) => {
+    // Case-insensitive lookup
+    const dataKey = Object.keys(data).find(k => k.toLowerCase() === key.toLowerCase());
+    return dataKey ? data[dataKey] : '';
   });
 
   return result;

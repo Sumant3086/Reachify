@@ -423,9 +423,10 @@ async function start() {
       setInterval(cleanupOldEmails, 24 * 60 * 60 * 1000);
     }, msUntilNight);
     
-    httpServer.listen(Number(PORT), '0.0.0.0', () => {
+    const portNumber = parseInt(PORT as string, 10);
+    httpServer.listen(portNumber, '0.0.0.0', () => {
       logger.info({ 
-        port: PORT, 
+        port: portNumber, 
         env: process.env.NODE_ENV,
         nodeVersion: process.version 
       }, 'Server started successfully');
