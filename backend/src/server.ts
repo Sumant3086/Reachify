@@ -421,7 +421,7 @@ async function start() {
       setInterval(cleanupOldEmails, 24 * 60 * 60 * 1000);
     }, msUntilNight);
     
-    httpServer.listen(PORT, '0.0.0.0', () => {
+    httpServer.listen(Number(PORT), '0.0.0.0', () => {
       logger.info({ 
         port: PORT, 
         env: process.env.NODE_ENV,
