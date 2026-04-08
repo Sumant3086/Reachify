@@ -278,8 +278,8 @@ router.delete('/templates/:id', isAuthenticated, async (req, res) => {
   }
 });
 
-// Bulk cancel emails (Professional+ only)
-router.post('/bulk-cancel', isAuthenticated, requirePermission('canBulkSend'), async (req: Request, res: Response) => {
+// Bulk cancel emails (Available to all users)
+router.post('/bulk-cancel', isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { emailIds } = req.body;
     const user = req.user as any;
