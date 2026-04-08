@@ -111,13 +111,25 @@ Node.js + Express + TypeScript
 
 ---
 
+## 🌐 Live Demo
+
+**Production URLs:**
+- Frontend: [https://reachify-io.onrender.com](https://reachify-io.onrender.com)
+- Backend API: [https://reachify-backend-jep1.onrender.com](https://reachify-backend-jep1.onrender.com)
+
+**Note**: Free tier instances may take 50+ seconds to wake up from sleep. The app includes a loading screen with timeout handling for better UX.
+
+**Test Credentials**: Use Google OAuth to sign in
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Node.js 18+ and npm
 - PostgreSQL 14+
 - Redis 6+
-- SMTP credentials (Resend, SendGrid, or Gmail)
+- SMTP credentials (Brevo recommended - 300 emails/day free)
 - Google OAuth credentials
 - Razorpay account (for payments)
 
@@ -159,11 +171,11 @@ REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_PASSWORD=your_redis_password
 
-# SMTP (Resend recommended)
-SMTP_HOST=smtp.resend.com
+# SMTP (Brevo recommended - 300 emails/day free, no domain verification)
+SMTP_HOST=smtp-relay.brevo.com
 SMTP_PORT=587
-SMTP_USER=resend
-SMTP_PASS=your_api_key
+SMTP_USER=your_brevo_login
+SMTP_PASS=your_brevo_api_key
 
 # Google OAuth
 GOOGLE_CLIENT_ID=your_client_id
@@ -353,6 +365,55 @@ npm run build
 - **Retention**: Email analytics drive engagement
 - **Scalability**: Handles 1M+ emails/day per instance
 - **Uptime**: 99.9% with health checks and graceful shutdown
+
+---
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**1. Backend takes 50+ seconds to load**
+- This is normal for Render.com free tier (cold start)
+- Solution: Use [UptimeRobot](https://uptimerobot.com) (free) to ping your backend every 5 minutes
+- The app includes a 60-second timeout with user-friendly loading message
+
+**2. "No valid emails found in file" error**
+- Ensure CSV has an "email" column header
+- Or use plain text file with one email per line
+- Check for proper email format (user@domain.com)
+
+**3. Emails not sending**
+- Verify SMTP credentials in backend .env
+- Check Brevo account limits (300/day on free tier)
+- Review backend logs for SMTP errors
+
+**4. Google OAuth not working**
+- Verify authorized redirect URIs in Google Cloud Console
+- Must include: `https://your-backend-url.com/auth/google/callback`
+- Check GOOGLE_CALLBACK_URL in backend .env
+
+**5. Cancel emails returns 400 error**
+- Ensure emails are in "scheduled" status (not already sent)
+- Check browser console (F12) for detailed error messages
+- Verify session is active (try refreshing the page)
+
+**6. CI/CD tests failing**
+- Run `npm test` locally to verify
+- Check TypeScript compilation with `npm run build`
+- Ensure all dependencies are installed
+
+### Performance Tips
+
+**Keep Backend Alive (Free Tier)**
+1. Sign up at [UptimeRobot.com](https://uptimerobot.com) (free)
+2. Add monitor: `https://reachify-backend-jep1.onrender.com/health`
+3. Set interval: 5 minutes
+4. This prevents cold starts
+
+**Optimize Email Delivery**
+- Use delay between emails (5-10 seconds recommended)
+- Stay within hourly limits to avoid rate limiting
+- Schedule emails during off-peak hours for better deliverability
 
 ---
 
