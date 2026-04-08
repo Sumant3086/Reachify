@@ -281,7 +281,9 @@ function Dashboard({ user, setUser }: DashboardProps) {
                 <div className="text-right">
                   <p className="text-sm text-gray-600 dark:text-gray-400">Valid until</p>
                   <p className="font-medium text-gray-900 dark:text-white">
-                    {new Date(subscription.end_date).toLocaleDateString('en-IN')}
+                    {new Date(subscription.end_date).toLocaleDateString('en-IN', {
+                      timeZone: 'Asia/Kolkata'
+                    })}
                   </p>
                 </div>
               )}
@@ -420,14 +422,15 @@ function Dashboard({ user, setUser }: DashboardProps) {
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{email.recipient_email}</td>
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate">{email.subject}</td>
                         <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                          {new Date(email.scheduled_at).toLocaleString('en-US', {
+                          {new Date(email.scheduled_at).toLocaleString('en-IN', {
                             year: 'numeric',
                             month: '2-digit',
                             day: '2-digit',
                             hour: '2-digit',
                             minute: '2-digit',
                             second: '2-digit',
-                            hour12: false
+                            hour12: false,
+                            timeZone: 'Asia/Kolkata'
                           })}
                         </td>
                         <td className="px-6 py-4">
@@ -466,14 +469,15 @@ function Dashboard({ user, setUser }: DashboardProps) {
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{email.recipient_email}</td>
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate">{email.subject}</td>
                         <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                          {new Date(email.sent_at).toLocaleString('en-US', {
+                          {new Date(email.sent_at).toLocaleString('en-IN', {
                             year: 'numeric',
                             month: '2-digit',
                             day: '2-digit',
                             hour: '2-digit',
                             minute: '2-digit',
                             second: '2-digit',
-                            hour12: false
+                            hour12: false,
+                            timeZone: 'Asia/Kolkata'
                           })}
                         </td>
                         <td className="px-6 py-4">
