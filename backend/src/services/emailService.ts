@@ -23,26 +23,30 @@ const transporter = nodemailer.createTransport({
   socketTimeout: 30000
 });
 
-// Verify SMTP connection on startup with retry
+// Verify SMTP connection on startup with retry (non-blocking)
 let smtpReady = false;
 async function verifySmtpConnection(retries = 3): Promise<void> {
   for (let i = 0; i < retries; i++) {
     try {
       await transporter.verify();
       smtpReady = true;
-      logger.info('SMTP connection verified');
+      logger.info('✅ SMTP connection verified');
       return;
     } catch (error: any) {
-      logger.warn({ attempt: i + 1, error: error.message }, 'SMTP verification failed, retrying...');
+      logger.warn({ attempt: i + 1, error: error.message }, 'SMTP verification failed, will retry on first email send');
       if (i < retries - 1) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Reduced to 1 second
       }
     }
   }
-  logger.error('SMTP connection failed after all retries');
+  // Don't block startup - SMTP will be verified on first email send
+  logger.warn('SMTP verification skipped - will verify on first email send');
 }
 
-verifySmtpConnection();
+// Verify in background, don't block startup
+verifySmtpConnection().catch(() => {
+  logger.warn('SMTP verification failed during startup, will retry on demand');
+});
 
 export async function sendEmail(to: string, subject: string, body: string): Promise<void> {
   // Wait for SMTP to be ready
