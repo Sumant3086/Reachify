@@ -11,8 +11,8 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Show UI in max 3s regardless of backend state
-    const timeout = setTimeout(() => setLoading(false), 3000);
+    // Show UI in max 60s for backend cold start
+    const timeout = setTimeout(() => setLoading(false), 60000);
 
     getUser()
       .then((res) => setUser(res.data))
@@ -23,9 +23,15 @@ function App() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-blue-900">
-        <div className="flex flex-col items-center gap-4 text-center px-4">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-700 dark:text-gray-300 font-medium text-lg">Loading Reachify...</p>
+        <div className="flex flex-col items-center gap-4 text-center px-4 max-w-md">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          <p className="text-gray-700 dark:text-gray-300 font-medium text-xl">Waking up backend...</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
+            Free tier servers sleep after inactivity. First load may take up to 60 seconds.
+          </p>
+          <p className="text-blue-600 dark:text-blue-400 text-xs mt-2">
+            💡 Upgrade to paid plan for instant response times
+          </p>
         </div>
       </div>
     );
