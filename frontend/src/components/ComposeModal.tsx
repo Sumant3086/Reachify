@@ -11,7 +11,7 @@ function ComposeModal({ onClose, onSuccess }: Props) {
   const [file, setFile]                     = useState<File | null>(null);
   const [emailCount, setEmailCount]         = useState(0);
   const [startTime, setStartTime]           = useState('');
-  const [delayBetweenEmails, setDelay]      = useState('5');
+  const [delayBetweenEmails, setDelay]      = useState('10');
   const [hourlyLimit, setHourlyLimit]       = useState('200');
   const [loading, setLoading]               = useState(false);
   const [error, setError]                   = useState('');
@@ -174,7 +174,8 @@ function ComposeModal({ onClose, onSuccess }: Props) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Delay Between Emails (sec)</label>
               <input type="number" value={delayBetweenEmails} onChange={e => setDelay(e.target.value)}
-                min="1" max="3600" className={inputCls} required />
+                min="10" max="3600" className={inputCls} required />
+              <p className="mt-1 text-xs text-gray-400">Minimum 10 seconds recommended for cancellation window</p>
             </div>
           </div>
 

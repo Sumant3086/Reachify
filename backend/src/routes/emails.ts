@@ -339,9 +339,19 @@ router.post('/bulk-cancel', isAuthenticated, async (req: Request, res: Response)
 
     if (validIds.length === 0) {
       logger.warn({ emailIds, userId: user.id, foundEmails: result.rows }, 'No scheduled emails found to cancel');
+      
+      // Check if emails exist but are not scheduled
+      if (result.rows.length > 0) {
+        const statuses = result.rows.map(r => r.status).join(', ');
+        return res.status(400).json({ 
+          error: 'Cannot cancel emails',
+          details: `Selected emails have status: ${statuses}. Only scheduled emails can be cancelled.`
+        });
+      }
+      
       return res.status(404).json({ 
-        error: 'No valid scheduled emails found',
-        details: `Found ${result.rows.length} emails, but none are in scheduled status`
+        error: 'No emails found',
+        details: 'The selected emails may have already been sent or do not belong to you.'
       });
     }
 
