@@ -2,6 +2,8 @@
 
 > A production-grade SaaS platform for bulk email scheduling, personalization, and analytics with real-time monitoring.
 
+**🚀 [Live Demo](https://reachify-io.onrender.com/) | 📖 [Documentation](#-api-documentation) | 🎯 [Features](#-key-features)**
+
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://reactjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-43853D?style=flat&logo=node.js&logoColor=white)](https://nodejs.org/)
@@ -113,13 +115,31 @@ Node.js + Express + TypeScript
 
 ## 🌐 Live Demo
 
-**Production URLs:**
-- Frontend: [https://reachify-io.onrender.com](https://reachify-io.onrender.com)
-- Backend API: [https://reachify-backend-jep1.onrender.com](https://reachify-backend-jep1.onrender.com)
+**🚀 [Try Reachify Live](https://reachify-io.onrender.com/)** 
 
-**Note**: Free tier instances may take 50+ seconds to wake up from sleep. The app includes a loading screen with timeout handling for better UX.
+**Production URLs:**
+- **Frontend**: [https://reachify-io.onrender.com](https://reachify-io.onrender.com)
+- **Backend API**: [https://reachify-backend-jep1.onrender.com](https://reachify-backend-jep1.onrender.com)
 
 **Test Credentials**: Use Google OAuth to sign in
+
+**⚠️ Note**: Free tier instances may take 50+ seconds to wake up from sleep. The app includes a loading screen with timeout handling for better UX.
+
+---
+
+## 📸 Screenshots
+
+### Home Page
+![Home Page](Home.png)
+*Clean, modern landing page with feature highlights and call-to-action*
+
+### Authentication
+![Login Page](Login.png)
+*Secure Google OAuth 2.0 authentication with loading states*
+
+### Email Dashboard
+![Sent Emails](Sent.png)
+*Real-time email tracking with status updates and analytics*
 
 ---
 
@@ -159,8 +179,8 @@ Node.js + Express + TypeScript
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/Sumant3086/ReachInbox_Assignment.git
-cd ReachInbox_Assignment
+git clone https://github.com/Sumant3086/Reachify.git
+cd Reachify
 ```
 
 2. **Backend Setup**
@@ -471,7 +491,8 @@ This is a portfolio project built for demonstration purposes. For questions or c
 
 **Developer**: Sumant Kumar  
 **GitHub**: [@Sumant3086](https://github.com/Sumant3086)  
-**Project**: [ReachInbox Assignment](https://github.com/Sumant3086/ReachInbox_Assignment)
+**Project**: [Reachify - Email Campaign Platform](https://github.com/Sumant3086/Reachify)  
+**Live Demo**: [https://reachify-io.onrender.com](https://reachify-io.onrender.com)
 
 ---
 
