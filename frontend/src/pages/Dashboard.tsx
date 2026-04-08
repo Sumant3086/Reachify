@@ -127,12 +127,20 @@ function Dashboard({ user, setUser }: DashboardProps) {
     if (!confirm(`Cancel ${selectedEmails.size} selected emails?`)) return;
 
     setBulkActionLoading(true);
+    setError(''); // Clear previous errors
     try {
-      await bulkCancelEmails(Array.from(selectedEmails));
+      const emailIds = Array.from(selectedEmails);
+      console.log('Cancelling emails:', emailIds);
+      const response = await bulkCancelEmails(emailIds);
+      console.log('Cancel response:', response);
       setSelectedEmails(new Set());
       await loadEmails(false);
-    } catch (err) {
-      setError('Failed to cancel emails');
+      // Show success message
+      setError(''); // Clear any errors
+    } catch (err: any) {
+      console.error('Cancel error:', err);
+      const errorMessage = err.response?.data?.error || err.response?.data?.details || 'Failed to cancel emails';
+      setError(errorMessage);
     } finally {
       setBulkActionLoading(false);
     }
