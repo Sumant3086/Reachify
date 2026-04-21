@@ -53,6 +53,7 @@ router.post('/schedule', isAuthenticated, checkEmailLimit, upload.single('file')
       return res.status(400).json({ error: 'Email list file is required' });
     }
 
+    // Parse startTime as ISO string (already in UTC from frontend)
     const startDate = new Date(startTime);
     const currentTime = new Date();
     // Allow scheduling in the past or present for immediate sending
