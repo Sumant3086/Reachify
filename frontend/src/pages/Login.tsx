@@ -63,10 +63,12 @@ function Login() {
             </div>
           </div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-            Welcome to Reachify
+            Welcome Back, Email Wizard
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
-            Sign in to start scheduling your email campaigns
+            Sign in to schedule emails like a boss
+            <br />
+            <span className="text-xs opacity-75">(Or at least pretend to be one)</span>
           </p>
         </div>
 
@@ -75,10 +77,10 @@ function Login() {
           <div className="space-y-6">
             <div className="text-center">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Sign In
+                One Click to Email Glory
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Use your Google account to continue
+                Use your Google account because remembering passwords is so 2010
               </p>
             </div>
 
@@ -125,6 +127,10 @@ function Login() {
               <a href="#" className="text-blue-600 dark:text-blue-400 hover:underline">
                 Privacy Policy
               </a>
+              <br />
+              <span className="text-xs opacity-75 mt-1 block">
+                (TL;DR: We won't spam you. That's your job.)
+              </span>
             </div>
           </div>
         </div>
@@ -132,13 +138,14 @@ function Login() {
         {/* Features */}
         <div className="mt-8 grid grid-cols-3 gap-4 text-center">
           {[
-            { icon: '🔒', label: 'Secure' },
-            { icon: '⚡', label: 'Fast' },
-            { icon: '🎯', label: 'Reliable' }
+            { icon: '🔒', label: 'Secure', subtitle: 'Bank-level' },
+            { icon: '⚡', label: 'Fast', subtitle: '<100ms' },
+            { icon: '🎯', label: 'Reliable', subtitle: '99.9%' }
           ].map((item, i) => (
             <div key={i} className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 border border-gray-200 dark:border-gray-700">
               <div className="text-2xl mb-1">{item.icon}</div>
               <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">{item.label}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-500">{item.subtitle}</div>
             </div>
           ))}
         </div>

@@ -23,37 +23,37 @@ function Home() {
     {
       icon: '🚀',
       title: 'Lightning Fast',
-      description: 'Send thousands of emails in seconds with our optimized infrastructure',
+      description: 'Send 10,000 emails faster than you can say "unsubscribe". Our servers don\'t sleep, even if you should.',
       color: 'from-blue-500 to-cyan-500'
     },
     {
       icon: '🎯',
       title: 'Smart Scheduling',
-      description: 'Schedule emails with precision timing and automatic retry logic',
+      description: 'Schedule emails for 3 AM because apparently that\'s when people check their inbox. (Spoiler: They don\'t.)',
       color: 'from-purple-500 to-pink-500'
     },
     {
       icon: '📊',
       title: 'Real-time Analytics',
-      description: 'Track delivery rates, opens, and engagement in real-time',
+      description: 'Watch your open rates in real-time. It\'s like Netflix, but for disappointment. (JK, our avg open rate is 35%)',
       color: 'from-green-500 to-emerald-500'
     },
     {
       icon: '🔒',
       title: 'Enterprise Security',
-      description: 'Bank-level encryption and compliance with industry standards',
+      description: 'Bank-level encryption. Because your "Buy Now!" emails deserve the same security as nuclear codes.',
       color: 'from-red-500 to-orange-500'
     },
     {
       icon: '⚡',
       title: 'Bulk Operations',
-      description: 'Handle massive email campaigns with ease and reliability',
+      description: 'Cancel 1,000 emails with one click. Perfect for when you realize it\'s a typo in the subject line.',
       color: 'from-yellow-500 to-amber-500'
     },
     {
       icon: '🎨',
       title: 'Personalization',
-      description: 'Dynamic content with CSV-based variable substitution',
+      description: 'Add {{name}} to make it personal. They\'ll totally believe you wrote it just for them. (They won\'t.)',
       color: 'from-indigo-500 to-purple-500'
     }
   ];
@@ -61,27 +61,27 @@ function Home() {
   const stats = [
     { value: '10M+', label: 'Emails Sent', icon: '📧' },
     { value: '99.9%', label: 'Uptime', icon: '⚡' },
-    { value: '50K+', label: 'Active Users', icon: '👥' },
-    { value: '<100ms', label: 'Response Time', icon: '🚀' }
+    { value: '500+', label: 'Happy Users', icon: '👥' },
+    { value: '<100ms', label: 'API Speed', icon: '🚀' }
   ];
 
   const testimonials = [
     {
       name: 'Priya Sharma',
       role: 'Marketing Director, TechCorp India',
-      content: 'Reachify transformed our email campaigns. We saw 300% increase in engagement!',
+      content: 'Finally, I can schedule emails at 2 AM without actually being awake at 2 AM. Life-changing? No. Convenient? Absolutely.',
       avatar: '👩‍💼'
     },
     {
       name: 'Rahul Verma',
       role: 'CEO, StartupHub',
-      content: 'Best email scheduling platform we\'ve used. The analytics are incredibly detailed.',
+      content: 'I used to pay $299/month for Mailchimp. Now I pay ₹3,999 and get the same features. My CFO loves me again.',
       avatar: '👨‍💼'
     },
     {
       name: 'Anita Desai',
       role: 'Growth Lead, E-commerce Plus',
-      content: 'Saved us 20 hours per week. The automation features are game-changing!',
+      content: 'The analytics told me 90% of people don\'t open my emails. Brutal honesty. But hey, at least now I know.',
       avatar: '👩‍💻'
     }
   ];
@@ -144,24 +144,28 @@ function Home() {
             className={`inline-block mb-6 px-4 py-2 bg-blue-100 dark:bg-blue-900/30 rounded-full text-blue-600 dark:text-blue-400 text-sm font-medium animate-bounce-slow ${isVisible ? 'opacity-100' : 'opacity-0'}`}
             style={{ transform: `translateY(${scrollY * 0.1}px)` }}
           >
-            ✨ The Future of Email Marketing in India
+            ✨ Because Manually Sending 10,000 Emails is SO 2005
           </div>
           
           <h1 
             className={`text-6xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-tight transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
             style={{ transform: `translateY(${scrollY * 0.05}px)` }}
           >
-            Send Emails at Scale
+            Email Marketing
             <br />
-            <span className="text-5xl md:text-6xl">With Precision</span>
+            <span className="text-5xl md:text-6xl">Without the Drama</span>
           </h1>
           
           <p 
             className={`text-xl text-gray-600 dark:text-gray-300 mb-10 max-w-3xl mx-auto transition-all duration-1000 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
             style={{ transform: `translateY(${scrollY * 0.08}px)` }}
           >
-            Enterprise-grade email scheduling platform trusted by thousands of Indian companies.
-            Schedule, personalize, and track your email campaigns with ease.
+            Stop clicking "send" like it's 1999. Schedule 10,000 emails while you sleep, 
+            track who actually reads them (spoiler: not many), and pretend you're a marketing genius.
+            <br />
+            <span className="text-sm mt-2 block opacity-75">
+              (But seriously, we handle 1M+ emails/day with 99.9% deliverability. We're good at this.)
+            </span>
           </p>
 
           <div className={`flex items-center justify-center gap-4 mb-16 transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
@@ -198,10 +202,12 @@ function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16 animate-fade-in">
             <h2 className="text-5xl font-bold mb-4 text-gray-900 dark:text-white">
-              Powerful Features
+              Features That Actually Work
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300">
-              Everything you need to run successful email campaigns
+              Unlike your last marketing campaign, these features deliver results
+              <br />
+              <span className="text-sm opacity-75">(We have the analytics to prove it. You probably don't.)</span>
             </p>
           </div>
 
@@ -235,10 +241,12 @@ function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16 animate-fade-in">
             <h2 className="text-5xl font-bold mb-4 text-gray-900 dark:text-white">
-              Simple Pricing
+              Pricing That Won't Make Your CFO Cry
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300">
-              Affordable plans designed for Indian businesses
+              Unlike Mailchimp's $299/month, we charge in rupees. Revolutionary, we know.
+              <br />
+              <span className="text-sm opacity-75">(Seriously though, we're 70% cheaper. Do the math.)</span>
             </p>
           </div>
 
@@ -248,7 +256,7 @@ function Home() {
                 name: 'Starter',
                 price: '₹0',
                 period: 'Forever Free',
-                features: ['1,000 emails/month', 'Basic analytics', 'Email support', '1 user', 'CSV upload'],
+                features: ['1,000 emails/month', 'Basic analytics (see who ignores you)', 'Email support (we reply faster than your customers)', '1 user', 'CSV upload (because Excel is life)'],
                 cta: 'Start Free',
                 plan: 'starter'
               },
@@ -256,7 +264,7 @@ function Home() {
                 name: 'Professional',
                 price: '₹3,999',
                 period: '/month',
-                features: ['50,000 emails/month', 'Advanced analytics', 'Priority support', '5 users', 'Custom templates', 'API access', 'Webhooks'],
+                features: ['50,000 emails/month (that\'s a lot of spam)', 'Advanced analytics (know exactly who hates you)', 'Priority support (we\'ll reply in 5 min)', '5 users (share the pain)', 'Custom templates (look professional)', 'API access (for the nerds)', 'Webhooks (because automation)'],
                 popular: true,
                 cta: 'Start 14-day Trial',
                 plan: 'professional'
@@ -265,7 +273,7 @@ function Home() {
                 name: 'Enterprise',
                 price: '₹14,999',
                 period: '/month',
-                features: ['Unlimited emails', 'Real-time analytics', '24/7 dedicated support', 'Unlimited users', 'Custom integrations', 'Dedicated account manager', 'SLA guarantee', 'White-label option'],
+                features: ['Unlimited emails (go crazy)', 'Real-time analytics (watch the magic happen)', '24/7 support (we never sleep)', 'Unlimited users (bring the whole company)', 'Custom integrations (we\'ll integrate with your toaster)', 'Dedicated manager (your new best friend)', 'SLA guarantee (99.9% uptime or your money back)', 'White-label (pretend you built this)'],
                 cta: 'Get Started',
                 plan: 'enterprise'
               }
@@ -323,8 +331,9 @@ function Home() {
             ))}
           </div>
 
-          <p className="text-center mt-8 text-gray-600 dark:text-gray-400 text-sm">
-            💳 All prices in Indian Rupees (₹). GST applicable as per Indian tax laws.
+          <p className="mt-4 text-sm opacity-75">💳 All prices in Indian Rupees (₹). GST applicable as per Indian tax laws.
+            <br />
+            <span className="text-xs">P.S. - Yes, we're cheaper than Mailchimp. No, we're not cutting corners. We just don't have a fancy office in San Francisco.</span>
           </p>
         </div>
       </section>
@@ -334,10 +343,12 @@ function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-5xl font-bold mb-4 text-gray-900 dark:text-white">
-              Loved by Indian Businesses
+              Real Reviews from Real People
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300">
-              See what our customers have to say
+              (Who are definitely not our friends. Probably.)
+              <br />
+              <span className="text-sm opacity-75">Okay fine, Priya is my cousin. But the other two are legit!</span>
             </p>
           </div>
 
@@ -373,18 +384,20 @@ function Home() {
       <section className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-12 text-white shadow-2xl hover:scale-105 transition-transform duration-500 animate-fade-in">
           <h2 className="text-4xl font-bold mb-4">
-            Ready to Transform Your Email Marketing?
+            Still Reading? You Must Be Interested.
           </h2>
           <p className="text-xl mb-8 opacity-90">
-            Join thousands of Indian companies using Reachify to scale their outreach
+            Join 50,000+ marketers who stopped manually sending emails and started living their best life.
+            <br />
+            <span className="text-sm">(Okay, it's more like 500 users. But we're growing! Give us a break.)</span>
           </p>
           <button
             onClick={() => navigate('/login')}
             className="bg-white text-blue-600 px-8 py-4 rounded-xl text-lg font-semibold hover:shadow-2xl hover:scale-110 transition-all duration-300"
           >
-            Start Your Free Trial →
+            Fine, I'll Try It For Free →
           </button>
-          <p className="mt-4 text-sm opacity-75">No credit card required • 14-day free trial</p>
+          <p className="mt-4 text-sm opacity-75">No credit card required • 14-day free trial • Cancel anytime (but you won't want to)</p>
         </div>
       </section>
 
@@ -400,7 +413,9 @@ function Home() {
                 <span className="text-xl font-bold">Reachify</span>
               </div>
               <p className="text-gray-400 text-sm">
-                Enterprise-grade email scheduling platform for Indian businesses
+                Email marketing that doesn't suck.
+                <br />
+                <span className="text-xs opacity-75">(Most of the time.)</span>
               </p>
             </div>
             <div>
@@ -432,7 +447,10 @@ function Home() {
             </div>
           </div>
           <div className="border-t border-gray-800 pt-8 text-center text-sm text-gray-400">
-            <p>© 2026 Reachify. All rights reserved. Made with ❤️ in India</p>
+            <p>© 2026 Reachify. All rights reserved. Made with ❤️ (and lots of coffee ☕) in India</p>
+            <p className="text-xs mt-2 opacity-75">
+              No emails were harmed in the making of this platform. Okay, maybe a few bounced. But we fixed it!
+            </p>
           </div>
         </div>
       </footer>
