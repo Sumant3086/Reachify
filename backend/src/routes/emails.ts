@@ -53,8 +53,16 @@ router.post('/schedule', isAuthenticated, checkEmailLimit, upload.single('file')
       return res.status(400).json({ error: 'Email list file is required' });
     }
 
-    // Parse startTime as ISO string (already in UTC from frontend)
-    const startDate = new Date(startTime);
+    // Parse startTime as IST (no timezone conversion)
+    // Input: "2026-04-21T18:14" should be treated as IST time
+    // We manually parse it to avoid timezone issues
+    const [datePart, timePart] = startTime.split('T');
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hour, minute] = timePart.split(':').map(Number);
+    
+    // Create date in IST by treating the values as-is
+    const startDate = new Date(year, month - 1, day, hour, minute, 0, 0);
+    
     const currentTime = new Date();
     // Allow scheduling in the past or present for immediate sending
     if (startDate.getTime() < currentTime.getTime() - 60000) {

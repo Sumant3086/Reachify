@@ -60,20 +60,13 @@ function ComposeModal({ onClose, onSuccess }: Props) {
     setError('');
     setLoading(true);
 
-    // Convert datetime-local to ISO string with timezone
-    // datetime-local gives "2026-04-21T18:14" which is local time
-    // We need to convert it to ISO with timezone info
-    const localDate = new Date(startTime);
-    // Get timezone offset in minutes and convert to ISO string
-    const tzOffset = localDate.getTimezoneOffset();
-    const adjustedDate = new Date(localDate.getTime() - (tzOffset * 60 * 1000));
-    const isoString = adjustedDate.toISOString();
-
+    // Keep time as-is in IST, no conversion needed
+    // datetime-local gives "2026-04-21T18:14" which is exactly what we want
     const fd = new FormData();
     fd.append('subject', subject);
     fd.append('body', body);
     fd.append('file', file);
-    fd.append('startTime', isoString);
+    fd.append('startTime', startTime); // Send as-is: "2026-04-21T18:14"
     fd.append('delayBetweenEmails', delayBetweenEmails);
     fd.append('hourlyLimit', hourlyLimit);
 
