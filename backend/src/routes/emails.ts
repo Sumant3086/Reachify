@@ -6,7 +6,6 @@ import { emailQueue } from '../queue/emailQueue';
 import { isAuthenticated } from '../middleware/auth';
 import { validateScheduleEmail, handleValidationErrors, sanitizeHtml } from '../utils/validation';
 import { parseCSVWithHeaders, personalizeEmail } from '../services/emailPersonalization';
-import { addEmailTracking, isUnsubscribed, validateEmailFormat } from '../utils/emailTracking';
 import { logger } from '../utils/logger';
 import { checkEmailLimit, requirePermission } from '../middleware/rbac';
 
@@ -134,12 +133,10 @@ router.post('/schedule', isAuthenticated, checkEmailLimit, upload.single('file')
       // Commit transaction
       await client.query('COMMIT');
 
-      logger.info({ userId: user.id, count: validEmails.length, skipped: emails.length - validEmails.length }, 'Emails scheduled successfully');
+      logger.info({ userId: user.id, count: emails.length }, 'Emails scheduled successfully');
       return res.json({ 
         success: true, 
-        count: validEmails.length,
-        skipped: emails.length - validEmails.length,
-        message: `Successfully scheduled ${validEmails.length} email(s)${emails.length - validEmails.length > 0 ? ` (${emails.length - validEmails.length} skipped due to unsubscribe/invalid)` : ''}`
+        count: emails.length
       });
     } catch (queueError: any) {
       // Rollback on queue failure
