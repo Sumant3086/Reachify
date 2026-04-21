@@ -6,6 +6,7 @@ import { emailQueue } from '../queue/emailQueue';
 import { isAuthenticated } from '../middleware/auth';
 import { validateScheduleEmail, handleValidationErrors, sanitizeHtml } from '../utils/validation';
 import { parseCSVWithHeaders, personalizeEmail } from '../services/emailPersonalization';
+import { addEmailTracking, isUnsubscribed, validateEmailFormat } from '../utils/emailTracking';
 import { logger } from '../utils/logger';
 import { checkEmailLimit, requirePermission } from '../middleware/rbac';
 
@@ -133,8 +134,13 @@ router.post('/schedule', isAuthenticated, checkEmailLimit, upload.single('file')
       // Commit transaction
       await client.query('COMMIT');
 
-      logger.info({ userId: user.id, count: emails.length }, 'Emails scheduled successfully');
-      return res.json({ success: true, count: emails.length });
+      logger.info({ userId: user.id, count: validEmails.length, skipped: emails.length - validEmails.length }, 'Emails scheduled successfully');
+      return res.json({ 
+        success: true, 
+        count: validEmails.length,
+        skipped: emails.length - validEmails.length,
+        message: `Successfully scheduled ${validEmails.length} email(s)${emails.length - validEmails.length > 0 ? ` (${emails.length - validEmails.length} skipped due to unsubscribe/invalid)` : ''}`
+      });
     } catch (queueError: any) {
       // Rollback on queue failure
       await client.query('ROLLBACK');
@@ -153,7 +159,7 @@ router.get('/scheduled', isAuthenticated, async (req, res) => {
   try {
     const user = req.user as any;
     const { rows } = await pool.query(
-      `SELECT id, recipient_email, subject, scheduled_at, status
+      `SELECT id, recipient_email, subject, body, scheduled_at, status
        FROM emails WHERE user_id = $1 AND status = 'scheduled'
        ORDER BY scheduled_at ASC LIMIT 500`,
       [user.id]
@@ -169,7 +175,7 @@ router.get('/sent', isAuthenticated, async (req, res) => {
   try {
     const user = req.user as any;
     const { rows } = await pool.query(
-      `SELECT id, recipient_email, subject, sent_at, status, error_message
+      `SELECT id, recipient_email, subject, body, sent_at, status, error_message
        FROM emails WHERE user_id = $1 AND status IN ('sent','failed')
        ORDER BY sent_at DESC NULLS LAST LIMIT 500`,
       [user.id]

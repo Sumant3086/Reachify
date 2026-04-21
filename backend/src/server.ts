@@ -16,6 +16,7 @@ import { redis } from './config/redisWithFallback';
 import authRoutes from './routes/auth';
 import emailRoutes from './routes/emails';
 import paymentRoutes from './routes/payment';
+import trackingRoutes from './routes/tracking';
 import { emailQueue, emailWorker } from './queue/emailQueue';
 import { validateEnv } from './utils/env';
 import { logger } from './utils/logger';
@@ -78,30 +79,52 @@ app.use(helmet({
 
 app.use(compression());
 
+// CORS configuration with multiple origins support
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://reachify-io.onrender.com'
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      logger.warn({ origin }, 'CORS blocked origin');
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-  exposedHeaders: ['X-Request-ID'],
-  maxAge: 86400 // 24 hours
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Cookie'],
+  exposedHeaders: ['X-Request-ID', 'Set-Cookie'],
+  maxAge: 86400, // 24 hours
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-// Redis-backed session store
+// Redis-backed session store with proper configuration
 app.use(session({
   store: new RedisStore({ client: redis }),
   secret: process.env.SESSION_SECRET || 'secret',
   resave: false,
   saveUninitialized: false,
   rolling: true, // Reset expiry on every request
+  proxy: true, // Trust proxy for secure cookies
   cookie: {
-    secure: isProd,
-    sameSite: isProd ? 'none' : 'lax',
+    secure: isProd, // HTTPS only in production
+    sameSite: isProd ? 'none' : 'lax', // 'none' required for cross-origin in production
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    httpOnly: true
+    httpOnly: true,
+    domain: isProd ? undefined : undefined // Let browser handle domain
   },
   name: 'sessionId' // Custom session cookie name
 }));
@@ -143,6 +166,7 @@ app.use('/api', userLimiter);
 app.use('/auth', authRoutes);
 app.use('/api/emails', emailRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/track', trackingRoutes); // Email tracking (open/click/unsubscribe)
 
 // Cache middleware for GET requests
 const cacheMiddleware = (duration: number) => {

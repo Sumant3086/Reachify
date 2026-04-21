@@ -53,7 +53,11 @@ const migrations: Migration[] = [
       await pool.query(`
         ALTER TABLE emails 
         ADD COLUMN IF NOT EXISTS opened_at TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS open_count INTEGER DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS last_opened_at TIMESTAMP,
         ADD COLUMN IF NOT EXISTS clicked_at TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS click_count INTEGER DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS last_clicked_at TIMESTAMP,
         ADD COLUMN IF NOT EXISTS bounced BOOLEAN DEFAULT FALSE
       `);
       
@@ -61,12 +65,86 @@ const migrations: Migration[] = [
         CREATE INDEX IF NOT EXISTS idx_emails_opened 
         ON emails(opened_at) WHERE opened_at IS NOT NULL
       `);
+      
+      // Email opens tracking table
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS email_opens (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          email_id UUID REFERENCES emails(id) ON DELETE CASCADE,
+          opened_at TIMESTAMP DEFAULT NOW(),
+          user_agent TEXT,
+          ip_address TEXT,
+          UNIQUE(email_id, opened_at)
+        )
+      `);
+      
+      // Email clicks tracking table
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS email_clicks (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          email_id UUID REFERENCES emails(id) ON DELETE CASCADE,
+          url TEXT NOT NULL,
+          clicked_at TIMESTAMP DEFAULT NOW(),
+          user_agent TEXT,
+          ip_address TEXT
+        )
+      `);
+      
+      // Unsubscribes table
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS unsubscribes (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          email VARCHAR(255) NOT NULL,
+          user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE,
+          unsubscribed_at TIMESTAMP DEFAULT NOW(),
+          source_email_id UUID REFERENCES emails(id) ON DELETE SET NULL,
+          reason TEXT,
+          UNIQUE(email, user_id)
+        )
+      `);
+      
+      // Contacts table
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS contacts (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE,
+          email VARCHAR(255) NOT NULL,
+          first_name VARCHAR(255),
+          last_name VARCHAR(255),
+          custom_fields JSONB,
+          subscribed BOOLEAN DEFAULT true,
+          soft_bounce_count INTEGER DEFAULT 0,
+          hard_bounced BOOLEAN DEFAULT false,
+          bounce_reason TEXT,
+          unsubscribed_at TIMESTAMP,
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW(),
+          UNIQUE(user_id, email)
+        )
+      `);
+      
+      // Indexes
+      await pool.query(`CREATE INDEX IF NOT EXISTS idx_email_opens_email_id ON email_opens(email_id)`);
+      await pool.query(`CREATE INDEX IF NOT EXISTS idx_email_clicks_email_id ON email_clicks(email_id)`);
+      await pool.query(`CREATE INDEX IF NOT EXISTS idx_email_clicks_url ON email_clicks(url)`);
+      await pool.query(`CREATE INDEX IF NOT EXISTS idx_unsubscribes_email ON unsubscribes(email)`);
+      await pool.query(`CREATE INDEX IF NOT EXISTS idx_unsubscribes_user_id ON unsubscribes(user_id)`);
+      await pool.query(`CREATE INDEX IF NOT EXISTS idx_contacts_user_email ON contacts(user_id, email)`);
+      await pool.query(`CREATE INDEX IF NOT EXISTS idx_contacts_subscribed ON contacts(subscribed) WHERE subscribed = true`);
     },
     down: async (pool: Pool) => {
+      await pool.query('DROP TABLE IF EXISTS email_opens CASCADE');
+      await pool.query('DROP TABLE IF EXISTS email_clicks CASCADE');
+      await pool.query('DROP TABLE IF EXISTS unsubscribes CASCADE');
+      await pool.query('DROP TABLE IF EXISTS contacts CASCADE');
       await pool.query(`
         ALTER TABLE emails 
         DROP COLUMN IF EXISTS opened_at,
+        DROP COLUMN IF EXISTS open_count,
+        DROP COLUMN IF EXISTS last_opened_at,
         DROP COLUMN IF EXISTS clicked_at,
+        DROP COLUMN IF EXISTS click_count,
+        DROP COLUMN IF EXISTS last_clicked_at,
         DROP COLUMN IF EXISTS bounced
       `);
     }
